@@ -1,2 +1,1 @@
 # author: seyeong
-author = "seyeong"
