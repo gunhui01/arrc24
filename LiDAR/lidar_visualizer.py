@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 __author__ = "Park Gunhui"
+__credits__ = ["Kim Hyosung"]
 
 import asyncio
 import cv2
@@ -38,21 +39,3 @@ if __name__ == "__main__":
             break
         except Exception:
             lidar.reset()
-
-"""
-try:
-    for i, scan in enumerate(lidar.iter_measures()):
-        if (i % 10 == 0) and int(scan[3]):
-            x = int(np.sin(np.radians(scan[2])) * (scan[3] / 10) + HALF_CANVAS_SIZE)
-            y = int(np.cos(np.radians(scan[2])) * (scan[3] / 10) + HALF_CANVAS_SIZE)
-
-            cv2.circle(canvas, (x, y), 3, (0, 0, 255), -1)
-            #flip_canvas = cv2.flip(canvas, 0)
-
-            cv2.imshow("LiDAR Visualizer", canvas)
-            cv2.waitKey(1)
-except KeyboardInterrupt:
-    lidar.stop()
-    lidar.disconnect()
-    cv2.destroyAllWindows()
-"""
