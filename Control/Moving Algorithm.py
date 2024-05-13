@@ -2,7 +2,6 @@ from Transbot_Lib import Transbot
 import time
 import math
 
-#author: seyeong
 #imu - Inertial Measurement Unit
 #set_pid_param(kp, ki, kd, forever=False)
 #set_speed_limit(line_limit, angular_limit, forever=False)
