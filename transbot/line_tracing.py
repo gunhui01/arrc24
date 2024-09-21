@@ -23,12 +23,6 @@ from time import time, sleep
 import cv2
 import numpy as np
 
-def find_line():
-    global speed, angle
-    speed = 0
-    if angle < 0: angle = -60
-    elif angle > 0: angle = 60
-    return
 
 # 메인 함수
 def line_tracing(frame_queue, control_queue, flag_queue):
@@ -36,6 +30,13 @@ def line_tracing(frame_queue, control_queue, flag_queue):
     flag = True # 로봇이 움직이지 않음 = False)
     speed = angle = 0
     find_line_count = 0
+
+    def find_line():
+        global speed, angle
+        speed = 0
+        if angle < 0: angle = -60
+        elif angle > 0: angle = 60
+        return
 
     try:
         while True:
