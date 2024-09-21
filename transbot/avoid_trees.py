@@ -48,3 +48,4 @@ def avoid_trees(lidar_queue, control_queue):
             time.sleep(0.025)
         else:
             control_queue.put((LINE_SPEED, 0))
+        time.sleep(0.01)
