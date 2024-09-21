@@ -39,8 +39,6 @@ def camera_capture(frame_queue):
             if not frame_queue.full():
                 frame_queue.put(frame)
 
-            sleep(1/30)
-
     finally:
         cap.release()
 

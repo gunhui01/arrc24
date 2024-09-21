@@ -134,7 +134,7 @@ def line_tracing(frame_queue, control_queue, flag_queue):
                 if (is_contour_exist == False) & (flag == True):
                     if find_line_count == 0:
                         now = time()
-                    speed, angle = find_line()
+                    speed, angle = find_line(speed, angle)
                     find_line_count += 1
                     if time() >= now + 2:
                         print(f"Stop zone detected")
@@ -147,12 +147,11 @@ def line_tracing(frame_queue, control_queue, flag_queue):
                     
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
-                    control_queue.put((speed, angle))
+                    control_queue.put((0, 0))
                     break
 
                 # 최종 모터 제어
                 control_queue.put((speed, angle))
-                sleep(0.01)
 
     except Exception as e: print(e)
     finally:
