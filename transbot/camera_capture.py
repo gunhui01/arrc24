@@ -3,7 +3,7 @@
 
 __author__ = "Hwang Hyeonjun"
 
-import subprocess, sys
+import subprocess, sys, cv2
 from time import sleep
 
 def camera_capture(frame_queue):
