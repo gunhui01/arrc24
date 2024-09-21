@@ -28,6 +28,8 @@ def lidar_scan(lidar_queue):
 def avoid_trees(lidar_queue, control_queue):
     LINE_SPEED = 10
     ANGULAR_SPEED = 100
+    turn_right = False
+    turn_left = False
 
     while True:
         if not lidar_queue.empty():
