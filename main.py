@@ -10,7 +10,7 @@ from transbot.avoid_trees import lidar_scan
 from transbot.avoid_trees import avoid_trees
 
 QUEUE_CHECK_INTERVAL = 0.01
-CAMERA_WAIT_INTERVAL = 1
+WAIT_INTERVAL = 1
 
 def main():
     try:
@@ -26,7 +26,7 @@ def main():
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_queue, control_queue))
 
         camera_capture_process.start()
-        time.sleep(CAMERA_WAIT_INTERVAL)
+        time.sleep(WAIT_INTERVAL)
         print("camera_capture started.")
 
         ###  LINE_TRACING  ###
@@ -50,6 +50,7 @@ def main():
         ###  AVOID_TREES  ###
 
         lidar_scan_process.start()
+        time.sleep(WAIT_INTERVAL)
         print("lidar_scan started.")
 
         avoid_trees_process.start()
