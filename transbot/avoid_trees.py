@@ -36,6 +36,7 @@ def avoid_trees(lidar_queue, control_queue):
     while True:
         if not lidar_queue.empty():
             turn_right, turn_left = lidar_queue.get()
+            print(turn_right, turn_left)
 
         if turn_right and turn_left:
             control_queue.put((LINE_SPEED, 0))

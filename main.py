@@ -50,7 +50,6 @@ def main():
         ###  AVOID_TREES  ###
 
         lidar_scan_process.start()
-        time.sleep(WAIT_INTERVAL)
         print("lidar_scan started.")
 
         avoid_trees_process.start()
@@ -60,7 +59,6 @@ def main():
             if not control_queue.empty():
                 line, angular = control_queue.get()
                 bot_control(line, angular)
-            time.sleep(QUEUE_CHECK_INTERVAL)
 
     finally:
         camera_capture_process.terminate()
