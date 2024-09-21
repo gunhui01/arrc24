@@ -25,20 +25,18 @@ import numpy as np
 
 def find_line():
     global speed, angle
-    if flag == True:
-        speed = 0
-        if angle < 0: angle = -60
-        elif angle > 0: angle = 60
+    speed = 0
+    if angle < 0: angle = -60
+    elif angle > 0: angle = 60
     return
 
-# 초기 변수 설정
-F = L = R = r_ratio = l_ratio = 0
-flag = True # 로봇이 움직이지 않음 = False)
-speed = angle = 0
-find_line_count = 0
-
-# 프레임 받아오기
+# 메인 함수
 def line_tracing(frame_queue, control_queue, flag_queue):
+    # 초기 변수 설정
+    flag = True # 로봇이 움직이지 않음 = False)
+    speed = angle = 0
+    find_line_count = 0
+
     try:
         while True:
             if not frame_queue.empty():
