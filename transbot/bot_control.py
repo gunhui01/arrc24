@@ -24,13 +24,11 @@ bot.set_pid_param(kp, ki, kd, forever=False)
 kp, ki, kd = bot.get_motion_pid()
 print("PID set to:", kp, ki, kd)
 
-def car_motion(line, angular):
+def bot_control(line, angular):
     # 모터 부하 방지
     if abs(line) >= 5 or abs(angular) >= 10:
         speed_l = line / 100.0
         speed_a = -angular / 100.0
         bot.set_car_motion(speed_l, speed_a)
-        return speed_l, speed_a
     else:
         bot.set_car_motion(0, 0)
-        return 0, 0
