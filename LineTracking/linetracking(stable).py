@@ -1,6 +1,7 @@
 ### 실행 전 v4l-utils 설치 필요
 ### sudo apt-get install v4l-utils
-### Author: HyeonJun Hwang
+
+__author__ = "Hwang Hyeonjun"
 
 ## 변수 설정 ##
 
