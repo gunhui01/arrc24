@@ -4,9 +4,9 @@ import time
 from multiprocessing import Process, Queue
 
 from transbot.bot_control import bot_control
-#from transbot.camera_capture import camera_capture
+from transbot.camera_capture import camera_capture
 from transbot.line_tracing import line_tracing
-#from transbot.avoid_trees import avoid_trees
+from transbot.avoid_trees import avoid_trees
 
 QUEUE_CHECK_INTERVAL = 0.01
 
@@ -16,9 +16,9 @@ def main():
     pause_queue = Queue()   # 모터 정지 유무(Bool)
     frame_queue = Queue()   # 카메라가 받은 이미지
 
-    camera_capture_process = Process(target=line_tracing, args=(frame_queue))
+    camera_capture_process = Process(target=line_tracing, args=(frame_queue,))
     line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
-    #avoid_trees_process = Process(target=avoid_trees, args=(control_queue))
+    avoid_trees_process = Process(target=avoid_trees, args=(control_queue,))
 
     camera_capture_process.start()
     print("camera_capture started.")
