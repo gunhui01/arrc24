@@ -11,6 +11,8 @@ def lidar_scan(lidar_queue):
         DIAGONAL_LENGTH = 250
         DETECT_RANGE = 150
         COS_MULTIPLY = 150
+        turn_right = False
+        turn_left = False
 
         lidar = RPLidar('/dev/ttyUSB0')
 
