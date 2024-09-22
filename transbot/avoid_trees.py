@@ -11,7 +11,6 @@ def lidar_scan(lidar_array):
         DIAGONAL_LENGTH = 250
         DETECT_RANGE = 150
         COS_MULTIPLY = 150
-        lidar_array = [False, False]
 
         lidar = RPLidar('/dev/ttyUSB0')
 
@@ -21,7 +20,8 @@ def lidar_scan(lidar_array):
                     turn_right = distance < (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(angle))) * COS_MULTIPLY)
                 elif 0 <= angle < 45:
                     turn_left = distance < (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(angle))) * COS_MULTIPLY)
-            lidar_array = [turn_right, turn_left]
+            lidar_array[0] = turn_right
+            lidar_array[1] = turn_left
     finally:
         lidar.stop()
         lidar.disconnect()
