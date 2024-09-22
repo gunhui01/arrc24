@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+__author__ = "Park Gunhui"
+__credits__ = ["Hwang Hyeonjun"]
+
 import time
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array
 
 from transbot.bot_control import bot_control
 from transbot.camera_capture import camera_capture
@@ -18,12 +21,12 @@ def main():
         control_queue = Queue() # 모터의 속도, 각속도(Tuple)
         pause_queue = Queue()   # 모터 정지 유무(Bool)
         frame_queue = Queue()   # 카메라가 받은 이미지
-        lidar_queue = Queue()   # LiDAR가 받은 데이터
+        lidar_array = Array('b', [False, False])
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue,))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
-        lidar_scan_process = Process(target=lidar_scan, args=(lidar_queue,))
-        avoid_trees_process = Process(target=avoid_trees, args=(lidar_queue, control_queue))
+        lidar_scan_process = Process(target=lidar_scan, args=(lidar_array,))
+        avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
 
         camera_capture_process.start()
         time.sleep(WAIT_INTERVAL)
