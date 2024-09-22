@@ -31,10 +31,12 @@ def lidar_scan(lidar_array):
 def avoid_trees(lidar_array, control_queue):
     LINE_SPEED = 10
     ANGULAR_SPEED = 100
-    turn_right = lidar_array[0]
-    turn_left = lidar_array[1]
 
     while True:
+        turn_right = lidar_array[0]
+        turn_left = lidar_array[1]
+        print(turn_right, turn_left)
+
         if turn_right and turn_left:
             control_queue.put((LINE_SPEED, 0))
         elif turn_right:
