@@ -55,6 +55,8 @@ def main():
 
         ###  AVOID_TREES  ###
 
+        end_line_detected = False
+
         lidar_scan_process.start()
         print("lidar_scan started.")
         avoid_trees_process.start()
@@ -67,23 +69,20 @@ def main():
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
-            if not flag_queue.empty():
+            if (not end_line_detected) and (not flag_queue.empty()):
                 finish = flag_queue.get()
                 if finish:
                     end_line_detect_process.terminate()
                     print("end_line_detect finished.")
+                    end_line_detected = True
                     end_line_detect_time = time.time()
-                    break
 
-        while (time.time() - end_line_detect_time) < STOP_INTERVAL:
-            if not control_queue.empty():
-                line, angular = control_queue.get()
-                bot_control(line, angular)
-
-        avoid_trees_process.terminate()
-        print("avoid_trees finished.")
-        lidar_scan_process.terminate()
-        print("lidar_scan finished.")
+            if end_line_detected and ((time.time() - end_line_detect_time) < STOP_INTERVAL):
+                avoid_trees_process.terminate()
+                print("avoid_trees finished.")
+                lidar_scan_process.terminate()
+                print("lidar_scan finished.")
+                break
     finally:
         camera_capture_process.terminate()
         line_tracing_process.terminate()
