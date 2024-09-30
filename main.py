@@ -14,7 +14,8 @@ from transbot.avoid_trees import avoid_trees
 from transbot.end_line_detect import end_line_detect
 
 QUEUE_CHECK_INTERVAL = 0.01
-WAIT_INTERVAL = 1
+CAMERA_CHECK_INTERVAL = 1
+STOP_INTERVAL = 2
 
 def main():
     try:
@@ -31,7 +32,7 @@ def main():
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, flag_queue))
 
         camera_capture_process.start()
-        time.sleep(WAIT_INTERVAL)
+        time.sleep(CAMERA_CHECK_INTERVAL)
         print("camera_capture started.")
 
         ###  LINE_TRACING  ###
@@ -71,11 +72,18 @@ def main():
                 if finish:
                     end_line_detect_process.terminate()
                     print("end_line_detect finished.")
-                    avoid_trees_process.terminate()
-                    print("avoid_trees finished.")
-                    lidar_scan_process.terminate()
-                    print("lidar_scan finished.")
+                    end_line_detect_time = time.time()
                     break
+
+        while (time.time() - end_line_detect_time) < STOP_INTERVAL:
+            if not control_queue.empty():
+                line, angular = control_queue.get()
+                bot_control(line, angular)
+
+        avoid_trees_process.terminate()
+        print("avoid_trees finished.")
+        lidar_scan_process.terminate()
+        print("lidar_scan finished.")
     finally:
         camera_capture_process.terminate()
         line_tracing_process.terminate()
