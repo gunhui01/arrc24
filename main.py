@@ -4,7 +4,7 @@ __author__ = "Park Gunhui"
 __credits__ = ["Hwang Hyeonjun"]
 
 import time
-from multiprocessing import Process, Queue, Array
+from multiprocessing import Process, Queue, Array, Event
 
 from transbot.bot_control import bot_control
 from transbot.camera_capture import camera_capture
@@ -25,9 +25,12 @@ def main():
         frame_queue = Queue()   # 카메라가 받은 이미지
         lidar_array = Array('b', [False, False])
 
-        camera_capture_process = Process(target=camera_capture, args=(frame_queue,))
+        camera_capture_event = Event()
+        lidar_scan_event = Event()
+
+        camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
-        lidar_scan_process = Process(target=lidar_scan, args=(lidar_array,))
+        lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, flag_queue))
 
@@ -80,15 +83,21 @@ def main():
             if end_line_detected and ((time.time() - end_line_detect_time) > STOP_INTERVAL):
                 avoid_trees_process.terminate()
                 print("avoid_trees finished.")
-                lidar_scan_process.terminate()
+                lidar_scan_event.set()
+                lidar_scan_process.join()
                 print("lidar_scan finished.")
+                camera_capture_event.set()
+                camera_capture_process.join()
+                print("camera_capture finished.")
                 break
     finally:
-        camera_capture_process.terminate()
         line_tracing_process.terminate()
-        lidar_scan_process.terminate()
         avoid_trees_process.terminate()
         end_line_detect_process.terminate()
+        lidar_scan_event.set()
+        lidar_scan_process.join()
+        camera_capture_event.set()
+        camera_capture_process.join()
         bot_control(0, 0)
 
 if __name__ == "__main__":

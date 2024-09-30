@@ -6,7 +6,7 @@ __credits__ = ["Lee Donghyun", "Hwang Hyeonjun", "Noh Minhyeok"]
 import math, time
 from rplidar import RPLidar
 
-def lidar_scan(lidar_array):
+def lidar_scan(lidar_array, lidar_scan_event):
     try:
         DIAGONAL_LENGTH = 250
         DETECT_RANGE = 150
@@ -17,6 +17,7 @@ def lidar_scan(lidar_array):
         lidar = RPLidar('/dev/ttyUSB0')
 
         for new_scan, quality, angle, distance in lidar.iter_measures():
+            if lidar_scan_event.is_set(): break
             if distance:
                 if 315 <= angle < 360:
                     turn_right = distance < (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(angle))) * COS_MULTIPLY)

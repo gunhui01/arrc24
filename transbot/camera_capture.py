@@ -6,7 +6,7 @@ __author__ = "Hwang Hyeonjun"
 import subprocess, sys, cv2
 from time import sleep
 
-def camera_capture(frame_queue):
+def camera_capture(frame_queue, camera_capture_event):
     try:
         # 연결된 카메라 인덱스 확인
         try:
@@ -30,6 +30,7 @@ def camera_capture(frame_queue):
         cap = cv2.VideoCapture(camera_index)
 
         while True:
+            if camera_capture_event.is_set: sys.exit()
             # 카메라에서 프레임 읽기
             ret, frame = cap.read()
             if not ret:
