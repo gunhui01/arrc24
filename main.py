@@ -11,6 +11,7 @@ from transbot.camera_capture import camera_capture
 from transbot.line_tracing import line_tracing
 from transbot.avoid_trees import lidar_scan
 from transbot.avoid_trees import avoid_trees
+from transbot.end_line_detect import end_line_detect
 
 QUEUE_CHECK_INTERVAL = 0.01
 WAIT_INTERVAL = 1
@@ -27,6 +28,7 @@ def main():
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array,))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
+        end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, flag_queue))
 
         camera_capture_process.start()
         time.sleep(WAIT_INTERVAL)
@@ -49,25 +51,37 @@ def main():
                     print("line_tracing finished.")
                     break
             time.sleep(QUEUE_CHECK_INTERVAL)
-        
+
         ###  AVOID_TREES  ###
 
         lidar_scan_process.start()
         print("lidar_scan started.")
-
         avoid_trees_process.start()
         print("avoid_trees started.")
+        end_line_detect_process.start()
+        print("end_line_detect started.")
 
         while True:
             if not control_queue.empty():
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
+            if not flag_queue.empty():
+                finish = flag_queue.get()
+                if finish:
+                    end_line_detect_process.terminate()
+                    print("end_line_detect finished.")
+                    avoid_trees_process.terminate()
+                    print("avoid_trees finished.")
+                    lidar_scan_process.terminate()
+                    print("lidar_scan finished.")
+                    break
     finally:
         camera_capture_process.terminate()
         line_tracing_process.terminate()
         lidar_scan_process.terminate()
         avoid_trees_process.terminate()
+        end_line_detect_process.terminate()
         bot_control(0, 0)
 
 if __name__ == "__main__":
