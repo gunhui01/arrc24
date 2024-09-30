@@ -81,6 +81,7 @@ def main():
                     end_line_detect_time = time.time()
 
             if end_line_detected and ((time.time() - end_line_detect_time) > STOP_INTERVAL):
+                bot_control(0, 0)
                 avoid_trees_process.terminate()
                 print("avoid_trees finished.")
                 lidar_scan_event.set()
