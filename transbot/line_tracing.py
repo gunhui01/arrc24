@@ -30,7 +30,7 @@ def find_line(speed, angle):
         return speed, angle
 
 # 메인 함수
-def line_tracing(frame_queue, control_queue, flag_queue):
+def line_tracing(frame_queue, flag_queue):
     # 초기 변수 설정
     flag = True # 로봇이 움직이지 않음 = False)
     speed = angle = 0

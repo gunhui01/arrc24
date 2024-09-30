@@ -87,7 +87,8 @@ def main():
                 lidar_scan_process.join()
                 print("lidar_scan finished.")
                 camera_capture_event.set()
-                camera_capture_process.join()
+                time.sleep(1)
+                camera_capture_process.terminate()
                 print("camera_capture finished.")
                 break
     finally:
@@ -97,7 +98,8 @@ def main():
         lidar_scan_event.set()
         lidar_scan_process.join()
         camera_capture_event.set()
-        camera_capture_process.join()
+        time.sleep(1)
+        camera_capture_process.terminate()
         bot_control(0, 0)
 
 if __name__ == "__main__":
