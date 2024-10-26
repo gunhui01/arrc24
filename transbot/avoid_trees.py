@@ -28,6 +28,7 @@ def lidar_scan(lidar_array, lidar_scan_event):
     finally:
         lidar.stop()
         lidar.disconnect()
+        print("lidar disconnected")
 
 def avoid_trees(lidar_array, control_queue):
     LINE_SPEED = 10

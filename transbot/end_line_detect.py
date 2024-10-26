@@ -25,7 +25,7 @@ import subprocess, sys, cv2
 import numpy as np
 
 
-def end_line_detect(frame_queue, flag_queue):
+def end_line_detect(frame_queue, end_line_detect_event):
     try:
         while True:
             if not frame_queue.empty():
@@ -84,9 +84,8 @@ def end_line_detect(frame_queue, flag_queue):
                     # 최소 면적 이상인 컨투어들만 필터링
                     large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_contour_area]
                     if large_contours:
-                        print(f"Stop zone detected")
-                        flag_queue.put(True)
+                        end_line_detect_event.set()
 
     except Exception as e: print(e)
     finally:
-        flag_queue.put(True)
+        end_line_detect_event.set()

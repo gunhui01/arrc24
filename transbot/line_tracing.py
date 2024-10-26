@@ -142,8 +142,8 @@ def line_tracing(frame_queue, control_queue, flag_queue):
                         sleep(2.8)
                         break
 
-                # 카메라 화면 표시
-                cv2.imshow('Line Tracking', frame)
+                # # 카메라 화면 표시
+                # cv2.imshow('Line Tracking', frame)
                     
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):

@@ -15,7 +15,8 @@ from transbot.end_line_detect import end_line_detect
 
 QUEUE_CHECK_INTERVAL = 0.01
 CAMERA_CHECK_INTERVAL = 1
-STOP_INTERVAL = 2
+STOP_INTERVAL = 0
+TOTAL_AREAS = 3
 
 def main():
     try:
@@ -27,12 +28,15 @@ def main():
 
         camera_capture_event = Event()
         lidar_scan_event = Event()
+        end_line_detect_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
-        end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, flag_queue))
+        end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event))
+
+        processes = [camera_capture_process, line_tracing_process, lidar_scan_process, avoid_trees_process, end_line_detect_process]
 
         camera_capture_process.start()
         time.sleep(CAMERA_CHECK_INTERVAL)
@@ -42,6 +46,10 @@ def main():
 
         line_tracing_process.start()
         print("line_tracing started.")
+        line_tracing_start_time = time.time()
+        while (time.time() - line_tracing_start_time) < CAMERA_CHECK_INTERVAL:
+            if not control_queue.empty():
+                line, angular = control_queue.get()
 
         while True:
             if not control_queue.empty():
@@ -58,6 +66,7 @@ def main():
 
         ###  AVOID_TREES  ###
 
+        current_area = 0
         end_line_detected = False
 
         lidar_scan_process.start()
@@ -67,40 +76,49 @@ def main():
         end_line_detect_process.start()
         print("end_line_detect started.")
 
-        while True:
+        area_start_time = time.time()
+        while current_area < TOTAL_AREAS:
             if not control_queue.empty():
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
-            if (not end_line_detected) and (not flag_queue.empty()):
-                finish = flag_queue.get()
-                if finish:
-                    end_line_detect_process.terminate()
-                    print("end_line_detect finished.")
-                    end_line_detected = True
-                    end_line_detect_time = time.time()
+            if (time.time() - area_start_time) > 1.5:
+                end_line_detect_event.clear()
+
+            if (not end_line_detected) and (end_line_detect_event.is_set()) and ((time.time() - area_start_time) > 2):
+                current_area += 1
+                print(f"Area {current_area} finished.")
+                end_line_detected = True
+                end_line_detect_time = time.time()
 
             if end_line_detected and ((time.time() - end_line_detect_time) > STOP_INTERVAL):
-                bot_control(0, 0)
-                avoid_trees_process.terminate()
-                print("avoid_trees finished.")
-                lidar_scan_event.set()
-                lidar_scan_process.join()
-                print("lidar_scan finished.")
-                camera_capture_event.set()
-                time.sleep(1)
-                camera_capture_process.terminate()
-                print("camera_capture finished.")
-                break
+                end_line_detected = False
+                bot_control(0,0)
+                print("Bot Stopped")
+
+                if current_area >= TOTAL_AREAS:
+                    end_line_detect_process.terminate()
+                    print("end_line_detect finished.")
+                    avoid_trees_process.terminate()
+                    print("avoid_trees finished.")
+                    lidar_scan_event.set()
+                    lidar_scan_process.join()
+                    print("lidar_scan finished.")
+                    camera_capture_event.set()
+                    time.sleep(1)
+                    camera_capture_process.terminate()
+                    print("camera_capture finished.")
+                    break
+                time.sleep(2) # 임시
+                area_start_time = time.time()
+
     finally:
-        line_tracing_process.terminate()
-        avoid_trees_process.terminate()
-        end_line_detect_process.terminate()
+        for process in processes:
+            process.terminate()
         lidar_scan_event.set()
         lidar_scan_process.join()
         camera_capture_event.set()
         time.sleep(1)
-        camera_capture_process.terminate()
         bot_control(0, 0)
 
 if __name__ == "__main__":
