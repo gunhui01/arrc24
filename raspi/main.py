@@ -35,6 +35,7 @@ def main():
         "light_off": light_control.off
     }
 
+    client.user_data_set(userdata)
     client.connect("192.168.0.2", 1883, 60)
     client.loop_forever()
 
