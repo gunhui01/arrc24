@@ -9,7 +9,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("raspi/ultrasonic")
 
 def on_message(client, userdata, msg):
-    detected = bool(msg.payload.decode("utf-8"))
+    detected = int(msg.payload.decode("utf-8"))
 
     if detected:
         userdata["obstacle_event"].set()

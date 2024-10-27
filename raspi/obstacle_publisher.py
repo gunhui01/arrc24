@@ -60,9 +60,9 @@ def obstacle_publisher():
             sensor_l = measure_distance(TRIG_PIN_L, ECHO_PIN_L)
 
             if sensor_m < DETECT_RANGE or sensor_r < DETECT_RANGE or sensor_l < DETECT_RANGE:
-                client.publish("raspi/ultrasonic", "True")
+                client.publish("raspi/ultrasonic", "1")
             else:
-                client.publish("raspi/ultrasonic", "False")
+                client.publish("raspi/ultrasonic", "0")
     except KeyboardInterrupt:
         print("Exiting...")
     finally:
