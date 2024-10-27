@@ -12,26 +12,28 @@ from obstacle_publisher import obstacle_publisher
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe("jetson/command")
+    print("Userdata on connect:", userdata)
 
 def on_message(client, userdata, msg):
     print(msg.payload)
     if msg.payload.decode("utf-8") == "obstacle_publisher_process":
-        userdata["obstacle_publisher_process"].start()
+        if userdata.get("obstacle_publisher_process") and not userdata["obstacle_publisher_process"].is_alive():
+            userdata["obstacle_publisher_process"].start()
     elif msg.payload.decode("utf-8") == "light_on":
-        userdata["light_on"]
+        userdata.get("light_on", lambda: None)()
     elif msg.payload.decode("utf-8") == "light_off":
-        userdata["light_off"]
+        userdata.get("light_off", lambda: None)()
 
 def main():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
-    obstacle_publisher_process = Process(target=obstacle_publisher)
-
-    client.user_data_set({"obstacle_publisher_process":obstacle_publisher_process})
-    client.user_data_set({"light_on":light_control.on()})
-    client.user_data_set({"light_off":light_control.off()})
+    userdata = {
+        "obstacle_publisher_process": Process(target=obstacle_publisher),
+        "light_on": light_control.on,
+        "light_off": light_control.off
+    }
 
     client.connect("192.168.0.2", 1883, 60)
     client.loop_forever()
