@@ -6,6 +6,7 @@ import RPi.GPIO as GPIO
 import time
 
 LED_PIN = 21
+GPIO.setmode(GPIO.BCM)
 GPIO.setup(LED_PIN, GPIO.OUT)
 
 def on():
