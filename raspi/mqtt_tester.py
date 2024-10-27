@@ -14,10 +14,13 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
 	print(msg.payload)
 
-def obstacle_subscriber():
+def main():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
     client.connect(IP, 1883, 60)
     client.loop_forever()
+
+if __name__ == "__main__":
+    main()

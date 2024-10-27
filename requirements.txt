@@ -2,3 +2,4 @@ opencv-python==4.9.0.80
 numpy==1.26.4
 rplidar-roboticia==0.9.5
 paho-mqtt==2.1.0
+rpi-lgpio==0.6

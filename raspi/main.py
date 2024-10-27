@@ -9,13 +9,13 @@ import paho.mqtt.client as mqtt
 import obstacle_publisher
 
 def on_connect(client, userdata, flags, rc):
-	print("Connected with result code " + str(rc))
-	client.subscribe("jetson/command")
+    print("Connected with result code " + str(rc))
+    client.subscribe("jetson/command")
 
 def on_message(client, userdata, msg):
-	print(msg.payload)
-	if msg.payload.decode("utf-8") == "obstacle":
-		userdata["obstacle_publish_process"].start()
+    print(msg.payload)
+    if msg.payload.decode("utf-8") == "obstacle":
+        userdata["obstacle_publish_process"].start()
 
 def main():
     client = mqtt.Client()
