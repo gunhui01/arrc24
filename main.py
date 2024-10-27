@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-__author__ = "Park Gunhui"
-__credits__ = ["Hwang Hyeonjun"]
+__author__ = ["Park Gunhui", "Hwang Hyeonjun"]
 
 import time
 from multiprocessing import Process, Queue, Array, Event
