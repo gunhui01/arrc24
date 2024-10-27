@@ -15,20 +15,26 @@ def on_connect(client, userdata, flags, rc):
     print("Userdata on connect:", userdata)
 
 def on_message(client, userdata, msg):
-    if msg.payload.decode("utf-8") == "obstacle_publisher_process":
+    message = msg.payload.decode("utf-8")
+
+    if message[:7] == "screen:":
+        userdata["command_share_queue"].put(message)
+
+    if message == "obstacle_publisher_process":
         if userdata.get("obstacle_publisher_process") and not userdata["obstacle_publisher_process"].is_alive():
             userdata["obstacle_publisher_process"].start()
-    elif msg.payload.decode("utf-8") == "light_on":
+    elif message == "light_on":
         userdata.get("light_on", lambda: None)()
-    elif msg.payload.decode("utf-8") == "light_off":
+    elif message == "light_off":
         userdata.get("light_off", lambda: None)()
 
-def command_receiver():
+def command_receiver(command_share_queue):
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
 
     userdata = {
+        "command_share_queue": command_share_queue,
         "obstacle_publisher_process": Process(target=obstacle_publisher),
         "light_on": light_control.on,
         "light_off": light_control.off

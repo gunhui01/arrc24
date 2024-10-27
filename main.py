@@ -85,6 +85,7 @@ def main():
         obstacle_subscriber_process.start()
         print("obstacle_subscriber started.")
 
+        command_queue.put("screen:1,z")
         command_queue.put("obstacle_publisher_process")
 
         area_start_time = time.time()
@@ -133,6 +134,8 @@ def main():
                     break
                 time.sleep(2) # 임시
                 area_start_time = time.time()
+
+        command_queue.put("screen:0,0")
 
     finally:
         for process in processes:
