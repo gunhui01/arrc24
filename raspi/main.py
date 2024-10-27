@@ -15,7 +15,6 @@ def on_connect(client, userdata, flags, rc):
     print("Userdata on connect:", userdata)
 
 def on_message(client, userdata, msg):
-    print(msg.payload)
     if msg.payload.decode("utf-8") == "obstacle_publisher_process":
         if userdata.get("obstacle_publisher_process") and not userdata["obstacle_publisher_process"].is_alive():
             userdata["obstacle_publisher_process"].start()
