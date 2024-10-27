@@ -102,7 +102,7 @@ def main():
                         time.sleep(0.1)
                         command_queue.put("light_on")
                         time.sleep(0.1)
-                        obstacle_queue.get()
+                    end_line_detected = False
 
             if not control_queue.empty():
                 line, angular = control_queue.get()
