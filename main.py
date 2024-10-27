@@ -25,20 +25,20 @@ def main():
         control_queue = Queue()    # 모터의 속도, 각속도(Tuple)
         pause_queue = Queue()      # 모터 정지 유무(Bool)
         frame_queue = Queue()      # 카메라가 받은 이미지
-        obstacle_queue = Queue()   # 장애물 인식 유무(Bool)
         command_queue = Queue()    # 라즈베리 파이에 전달할 명령
         lidar_array = Array('b', [False, False])
 
         camera_capture_event = Event()
         lidar_scan_event = Event()
         end_line_detect_event = Event()
+        obstacle_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event))
-        obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_queue,))
+        obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_event,))
         raspi_command_process = Process(target=raspi_command, args=(command_queue,))
 
         processes = [camera_capture_process, line_tracing_process, lidar_scan_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process]
@@ -91,17 +91,14 @@ def main():
         while current_area < TOTAL_AREAS:
             command_queue.put("light_on")
 
-            if not obstacle_queue.empty():
-                obstacle = obstacle_queue.get()
-                if obstacle:
-                    bot_control(0, 0)
-                    print("Obstacle detected.")
-                    while not obstacle_queue.empty():
-                        obstacle_queue.get()
-                        command_queue.put("light_off")
-                        time.sleep(0.1)
-                        command_queue.put("light_on")
-                        time.sleep(0.1)
+            if obstacle_event.is_set():
+                bot_control(0, 0)
+                print("Obstacle detected.")
+                while obstacle_event.is_set():
+                    command_queue.put("light_off")
+                    time.sleep(0.1)
+                    command_queue.put("light_on")
+                    time.sleep(0.1)
 
             if not control_queue.empty():
                 line, angular = control_queue.get()

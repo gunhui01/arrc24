@@ -6,12 +6,11 @@ import RPi.GPIO as GPIO
 import paho.mqtt.client as mqtt
 import time
 
+DETECT_RANGE = 10 #cm
+
 def on_connect(client, userdata, flags, rc):
 	if rc == 0: print("Connected success")
 	else: print("Bad connection returned code: ", rc)
-
-# def on_publish(client, userdata, mid):
-# 	print(f"Message published. MID: {mid}")
 
 def measure_distance(trig_pin, echo_pin):
     GPIO.output(trig_pin, False)
@@ -56,9 +55,14 @@ def obstacle_publisher():
 
     try:
         while True:
-            client.publish("raspi/ultrasonic", str(measure_distance(TRIG_PIN_M, ECHO_PIN_M)))
-            client.publish("raspi/ultrasonic", str(measure_distance(TRIG_PIN_R, ECHO_PIN_R)))
-            client.publish("raspi/ultrasonic", str(measure_distance(TRIG_PIN_L, ECHO_PIN_L)))
+            sensor_m = measure_distance(TRIG_PIN_M, ECHO_PIN_M)
+            sensor_r = measure_distance(TRIG_PIN_R, ECHO_PIN_R)
+            sensor_l = measure_distance(TRIG_PIN_L, ECHO_PIN_L)
+
+            if sensor_m < DETECT_RANGE or sensor_r < DETECT_RANGE or sensor_l < DETECT_RANGE:
+                client.publish("raspi/ultrasonic", "True")
+            else:
+                client.publish("raspi/ultrasonic", "False")
     except KeyboardInterrupt:
         print("Exiting...")
     finally:
