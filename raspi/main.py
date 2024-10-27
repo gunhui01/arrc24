@@ -3,40 +3,21 @@
 __author__ = "Park Gunhui"
 
 import time
-from multiprocessing import Process, Queue, Array, Event
-import paho.mqtt.client as mqtt
+from multiprocessing import Process, Queue
 
-import light_control
-from obstacle_publisher import obstacle_publisher
-
-def on_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
-    client.subscribe("jetson/command")
-    print("Userdata on connect:", userdata)
-
-def on_message(client, userdata, msg):
-    if msg.payload.decode("utf-8") == "obstacle_publisher_process":
-        if userdata.get("obstacle_publisher_process") and not userdata["obstacle_publisher_process"].is_alive():
-            userdata["obstacle_publisher_process"].start()
-    elif msg.payload.decode("utf-8") == "light_on":
-        userdata.get("light_on", lambda: None)()
-    elif msg.payload.decode("utf-8") == "light_off":
-        userdata.get("light_off", lambda: None)()
+from screen_display import screen_display
+from command_receiver import command_receiver
 
 def main():
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
+    display_info_queue = Queue()
 
-    userdata = {
-        "obstacle_publisher_process": Process(target=obstacle_publisher),
-        "light_on": light_control.on,
-        "light_off": light_control.off
-    }
+    screen_display_process = Process(target=screen_display, args=(display_info_queue,))
+    command_receiver_process = Process(target=command_receiver)
 
-    client.user_data_set(userdata)
-    client.connect("192.168.0.2", 1883, 60)
-    client.loop_forever()
+    screen_display_process.start()
+    command_receiver_process.start()
+
+    # display_info_queue.put(("1", "1"))
 
 if __name__ == "__main__":
     main()
