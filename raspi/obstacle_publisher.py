@@ -38,7 +38,6 @@ def obstacle_publisher():
     ECHO_PIN_R = 23
     TRIG_PIN_M = 20
     ECHO_PIN_M = 26
-    LED_PIN = 21
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(TRIG_PIN_L, GPIO.OUT)
@@ -47,7 +46,6 @@ def obstacle_publisher():
     GPIO.setup(ECHO_PIN_R, GPIO.IN)
     GPIO.setup(TRIG_PIN_M, GPIO.OUT)
     GPIO.setup(ECHO_PIN_M, GPIO.IN)
-    GPIO.setup(LED_PIN, GPIO.OUT)
 
     client = mqtt.Client()
     client.on_connect = on_connect
