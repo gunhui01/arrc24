@@ -14,6 +14,7 @@ def on_message(client, userdata, msg):
 	print(msg.payload)
 	if float(msg.payload.decode("utf-8")) <= DETECT_RANGE:
 		userdata["obstacle_queue"].put(True)
+		print("True")
 
 def obstacle_subscriber(obstacle_queue):
     client = mqtt.Client()

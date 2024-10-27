@@ -10,8 +10,8 @@ def on_connect(client, userdata, flags, rc):
 	if rc == 0: print("Connected success")
 	else: print("Bad connection returned code: ", rc)
 
-def on_publish(client, userdata, mid):
-	print(f"Message published. MID: {mid}")
+# def on_publish(client, userdata, mid):
+# 	print(f"Message published. MID: {mid}")
 
 def measure_distance(trig_pin, echo_pin):
     GPIO.output(trig_pin, False)
@@ -49,7 +49,7 @@ def obstacle_publisher():
 
     client = mqtt.Client()
     client.on_connect = on_connect
-    client.on_publish = on_publish
+    # client.on_publish = on_publish
     client.connect("192.168.0.2", 1883, 60)
 
     client.loop_start()

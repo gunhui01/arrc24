@@ -38,8 +38,8 @@ def main():
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event))
-        obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_queue))
-        raspi_command_process = Process(target=raspi_command, args=(command_queue))
+        obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_queue,))
+        raspi_command_process = Process(target=raspi_command, args=(command_queue,))
 
         processes = [camera_capture_process, line_tracing_process, lidar_scan_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process]
 
