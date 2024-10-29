@@ -43,6 +43,6 @@ class ScreenDisplay:
     def run(self):
         self.root.mainloop()
 
-def screen_display(image_change_queue):
+def screen_display(image_change_queue, display_info_queue):
     display = ScreenDisplay(image_change_queue)
     display.run()
