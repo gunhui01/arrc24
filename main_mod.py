@@ -131,7 +131,7 @@ def main():
                     avoid_trees_process.terminate()
                     print("avoid_trees finished.")
                     lidar_scan_event.set()
-                    lidar_scan_process.join()
+                    multi_lidar_scan_process.join()
                     print("lidar_scan finished.")
                     camera_capture_event.set()
                     time.sleep(1)

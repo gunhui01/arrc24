@@ -12,7 +12,7 @@ def main():
     display_info_queue = Queue()
     command_share_queue = Queue()
 
-    screen_display_process = Process(target=screen_display, args=(command_share_queue, display_info_queue))
+    screen_display_process = Process(target=screen_display, args=(command_share_queue, command_share_queue))
     command_receiver_process = Process(target=command_receiver, args=(command_share_queue,))
 
     screen_display_process.start()
