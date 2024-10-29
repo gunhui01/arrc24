@@ -5,36 +5,41 @@ __author__ = "Park Gunhui"
 import math, time
 from rplidar import RPLidar
 
-def multi_lidar_scan(measure_array, lidar_scan_event):
+def multi_lidar_scan(lidar_queue, lidar_scan_event):
     try:
         lidar = RPLidar('/dev/ttyUSB0')
         for new_scan, quality, angle, distance in lidar.iter_measures():
             if lidar_scan_event.is_set(): break
-            measure_array[0] = angle
-            measure_array[1] = distance
+            if (0 <= angle < 45) or (315 <= angle < 360):
+                lidar_queue.put((int(angle), int(distance)))
     finally:
         lidar.stop()
         lidar.disconnect()
         print("lidar disconnected")
 
-def determine_direction(measure_array, lidar_array):
+def determine_direction(lidar_queue, lidar_array):
     DIAGONAL_LENGTH = 250
     DETECT_RANGE = 150
     COS_MULTIPLY = 150
 
     while True:
-        one_lap_measure = False
-        turn_right = 0
-        turn_left = 0
-        while not one_lap_measure:
-            if measure_array[0] > 355:
-                one_lap_measure = True
-            elif 5 <= measure_array[0] < 45:
-                if measure_array[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[0]))) * COS_MULTIPLY:
-                    turn_left += 1
-            elif 315 <= measure_array[0] < 355:
-                if measure_array[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[0]))) * COS_MULTIPLY:
-                    turn_right += 1
+        lap = False
+        previous_angle = 0
+
+        while not lap:
+            if not lidar_queue.empty():
+                lidar_value = lidar_queue.get()
+                
+                if lidar_value[0] < 45:
+                    if lidar_value[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(lidar_value[0]))) * COS_MULTIPLY:
+                        turn_left = lidar_value[1] if lidar_value[1] < turn_left else turn_left
+                else:
+                    if lidar_value[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(lidar_value[0]))) * COS_MULTIPLY:
+                        turn_right = lidar_value[1] if lidar_value[1] < turn_right else turn_right
+                
+                if lidar_value[0] - previous_angle > 0: lap = True
+                previous_angle = lidar_value[0]
+
         if turn_right > turn_left:
             lidar_array[0] = False
             lidar_array[1] = True

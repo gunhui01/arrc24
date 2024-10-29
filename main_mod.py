@@ -27,8 +27,8 @@ def main():
         control_queue = Queue()    # 모터의 속도, 각속도(Tuple)
         pause_queue = Queue()      # 모터 정지 유무(Bool)
         frame_queue = Queue()      # 카메라가 받은 이미지
+        lidar_queue = Queue()
         command_queue = Queue()    # 라즈베리 파이에 전달할 명령
-        measure_array = Array('f', [0.0, 0.0])
         lidar_array = Array('b', [False, False])
 
         camera_capture_event = Event()
@@ -39,8 +39,8 @@ def main():
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
         #lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
-        multi_lidar_scan_process = Process(target=multi_lidar_scan, args=(measure_array, lidar_scan_event))
-        determine_direction_process = Process(target=determine_direction, args=(measure_array, lidar_array))
+        multi_lidar_scan_process = Process(target=multi_lidar_scan, args=(lidar_queue, lidar_scan_event))
+        determine_direction_process = Process(target=determine_direction, args=(lidar_queue, lidar_array))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event))
         obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_event,))
