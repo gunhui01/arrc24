@@ -147,7 +147,7 @@ def main():
         for process in processes:
             process.terminate()
         lidar_scan_event.set()
-        lidar_scan_process.join()
+        multi_lidar_scan_process.join()
         camera_capture_event.set()
         command_queue.put("light_off")
         time.sleep(1)
