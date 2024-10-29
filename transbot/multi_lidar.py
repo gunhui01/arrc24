@@ -30,9 +30,11 @@ def determine_direction(measure_array, lidar_array):
             if measure_array[0] > 355:
                 one_lap_measure = True
             elif 5 <= measure_array[0] < 45:
-                turn_left += (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[1]))) * COS_MULTIPLY)
+                if measure_array[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[0]))) * COS_MULTIPLY:
+                    turn_left += 1
             elif 315 <= measure_array[0] < 355:
-                turn_right += (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[1]))) * COS_MULTIPLY)
+                if measure_array[1] < DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[0]))) * COS_MULTIPLY:
+                    turn_right += 1
         if turn_right > turn_left:
             lidar_array[0] = False
             lidar_array[1] = True
