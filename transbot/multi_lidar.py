@@ -34,17 +34,17 @@ def determine_direction(measure_array, lidar_array):
             elif 315 <= measure_array[0] < 355:
                 turn_right += (DIAGONAL_LENGTH + DETECT_RANGE + math.cos(math.radians(int(measure_array[1]))) * COS_MULTIPLY)
         if turn_right > turn_left:
-            lidar_array[0] = True
-            lidar_array[1] = False
-            print(lidar_array[0], lidar_array[1])
-        else:
             lidar_array[0] = False
             lidar_array[1] = True
+            print(lidar_array[0], lidar_array[1])
+        else:
+            lidar_array[0] = True
+            lidar_array[1] = False
             print(lidar_array[0], lidar_array[1])
 
 def avoid_trees(lidar_array, control_queue):
     LINE_SPEED = 10
-    ANGULAR_SPEED = 100
+    ANGULAR_SPEED = 60
 
     while True:
         turn_right = lidar_array[0]

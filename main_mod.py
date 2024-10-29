@@ -9,7 +9,7 @@ from transbot.bot_control import bot_control
 from transbot.camera_capture import camera_capture
 from transbot.line_tracing import line_tracing
 from transbot.avoid_trees import lidar_scan
-from transbot.avoid_trees import avoid_trees
+from transbot.multi_lidar import avoid_trees
 from transbot.multi_lidar import multi_lidar_scan
 from transbot.multi_lidar import determine_direction
 from transbot.end_line_detect import end_line_detect
