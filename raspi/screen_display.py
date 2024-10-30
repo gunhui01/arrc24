@@ -9,9 +9,9 @@ from multiprocessing import Process, Queue
 CHECK_INTERVAL = 100 # ms
 
 class ScreenDisplay:
-    def __init__(self, command_share_queue, image_change_queue):
+    def __init__(self, command_share_queue, apple_count_queue):
         self.command_share_queue = command_share_queue
-        self.image_change_queue = image_change_queue
+        self.apple_count_queue = apple_count_queue
         self.root = tk.Tk()
         self.root.attributes('-fullscreen', True)
         self.root.bind('<Escape>', lambda e: self.root.destroy())
@@ -19,23 +19,23 @@ class ScreenDisplay:
         self.label = tk.Label(self.root)
         self.label.pack()
 
-        self.update_image("0", "0") # Default image: ("0", "0")
+        self.update_image('z') # Default image: ('z')
         self.root.after(CHECK_INTERVAL, self.check_queue)
 
     def check_queue(self):
         if not self.command_share_queue.empty():
             self.command = self.command_share_queue.get()
             if self.command[:7] == "screen:":
-                self.update_image(self.command[7], self.command[9])
+                self.update_image(self.command[7])
 
-        if not self.queue.empty():
+        if not self.apple_count_queue.empty():
             area, result = self.queue.get()
             self.update_image(area, result)
-        
+
         self.root.after(CHECK_INTERVAL, self.check_queue)
 
-    def update_image(self, area, result):
-        img = Image.open(f"./display/{area}/{result}.png")
+    def update_image(self, filename):
+        img = Image.open(f"/home/bot/arrc24/raspi/display/{filename}.png")
         self.photo = ImageTk.PhotoImage(img)
         self.label.config(image=self.photo)
         self.label.image = self.photo
@@ -43,6 +43,6 @@ class ScreenDisplay:
     def run(self):
         self.root.mainloop()
 
-def screen_display(image_change_queue, display_info_queue):
-    display = ScreenDisplay(image_change_queue, display_info_queue)
+def screen_display(image_change_queue, apple_count_queue):
+    display = ScreenDisplay(image_change_queue, apple_count_queue)
     display.run()

@@ -94,7 +94,8 @@ def main():
 
         command_queue.put("start:obstacle_publisher_process")
         command_queue.put("start:video_publisher_process")
-        command_queue.put(f"screen:{current_area},z") # 1구간 분석 중 화면 표시
+        command_queue.put("start:apple_count_subscriber_process")
+        command_queue.put("screen:x")
         area_start_time = time.time()
 
         while True:
@@ -104,6 +105,7 @@ def main():
             if obstacle_event.is_set():
                 bot_control(0, 0)
                 print("Obstacle detected.")
+                command_queue.put("screen:y")
                 while obstacle_event.is_set():
                     command_queue.put("end:light")
                     time.sleep(0.1)
@@ -162,7 +164,7 @@ def main():
         
         ###  3. ARUCO_MARKER  ###
 
-        command_queue.put("screen:0,0")
+        command_queue.put("screen:z")
 
     finally:
         for process in processes:
