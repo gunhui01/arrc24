@@ -1,82 +1,83 @@
+#!/usr/bin/env python3
+
+__author__ = "Bae Sunggyu"
+
 import numpy as np
 import cv2
-from transbot.bot_control import bot_control
+import time
 
-def move_robot_to_marker_center(frame, corners, ids, camera_matrix, dist_coeffs, desired_distance=15):
-    # 이미지의 중심 계산
-    frame_center_x = frame.shape[1] / 2
+def aruco_follower(control_queue, finish_event):
+   LINE_SPEED = 10
+   ANGULAR_SPEED = 100
 
-    for i, corner in enumerate(corners):
-        if ids[i][0] == 10:  # ID가 10번인 마커만 인식
-            # Aruco 마커의 중심 계산
-            marker_center_x = int(np.mean(corner[0][:, 0]))
-
-            # 카메라와 마커 사이의 거리 계산
-            rvec, tvec, _ = cv2.aruco.estimatePoseSingleMarkers(corner, 0.02, camera_matrix, dist_coeffs)
-            distance = tvec[0][0][2] * 100  # m -> cm 변환
-
-            # X축 오차 계산
-            error_x = marker_center_x - frame_center_x
-
-            # 각속도 설정 (오차에 따라)
-            angular_speed = -10 if error_x > 10 else 10 if error_x < -10 else 0
-
-            # 선속도 설정 (거리와 각속도에 따라)
-            if distance > desired_distance + 1:
-                line_speed = 100  # 지정된 속도로 이동
-            else:
-                line_speed = 0  # 목표 거리 도달 시 멈춤
-
-            # 로봇 제어
-            bot_control(line_speed, angular_speed)
-            print(f"Moving to marker {ids[i][0]} - Line speed: {line_speed}, Angular speed: {angular_speed}, Distance: {distance:.2f} cm")
-
-def detect_and_move_to_marker(aruco_dict_type, camera_matrix, dist_coeffs):
-    # USB 카메라 연결
-    cap = cv2.VideoCapture(1)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-    if not cap.isOpened():
-        print("Error: Could not open camera.")
-        return
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame")
-            break
-
-        # Aruco 마커 검출
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        aruco_dict = cv2.aruco.getPredefinedDictionary(aruco_dict_type)
-        parameters = cv2.aruco.DetectorParameters()
-        corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-
-        # ID가 10번인 마커가 있으면 이동 수행
-        if ids is not None:
-            if 10 in ids:
-                # 마커 중심으로 이동하도록 제어
-                move_robot_to_marker_center(frame, corners, ids, camera_matrix, dist_coeffs)
-
-            # 마커 검출된 경우, 검출된 마커를 화면에 표시
-            cv2.aruco.drawDetectedMarkers(frame, corners, ids)
-        
-        cv2.imshow("Aruco Marker Detection", frame)
-
-        if cv2.waitKey(1) == ord('q'):  # 'q' 키를 누르면 종료
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    # 아루코 마커 타입 설정 및 카메라 파라미터 불러오기
-    aruco_dict_type = cv2.aruco.DICT_5X5_250
-
-    with np.load('camera_calibration.npz') as data:
-        camera_matrix = data['camera_matrix']
-        dist_coeffs = data['distortion_coefficients']  # 왜곡 계수 로드
-
-    # 아루코 마커 인식 및 로봇 이동 수행
-    detect_and_move_to_marker(aruco_dict_type, camera_matrix, dist_coeffs)
+   # 카메라 캘리브레이션 파일 불러오기
+   with np.load('/home/bot/arrc/camera_calibration.npz') as data:
+       camera_matrix = data['camera_matrix']
+       dist_coeffs = data['distortion_coefficients']
+   
+   # 7x7 타입의 딕셔너리만 사용
+   aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_7X7_1000)
+   parameters = cv2.aruco.DetectorParameters()
+   
+   MARKER_SIZE = 0.1  # 10cm
+   TARGET_DISTANCE = 0.05  # 5cm
+   DISTANCE_TOLERANCE = 0.005  # 허용 오차 ±0.5cm
+   
+   cap = cv2.VideoCapture(1)
+   cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+   cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+   
+   if not cap.isOpened():
+       print("Error: Could not open camera.")
+       return
+   
+   try:
+       while True:
+           ret, frame = cap.read()
+           if not ret:
+               continue
+               
+           gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+           corners, ids, _ = cv2.aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+           
+           if ids is not None:
+               # 10번 마커 찾기
+               marker_index = np.where(ids == 10)[0]
+               if len(marker_index) > 0:
+                   i = marker_index[0]
+                   rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners, MARKER_SIZE, camera_matrix, dist_coeffs)
+                   
+                   # 거리 계산
+                   distance = np.sqrt(tvecs[i][0][0]**2 + tvecs[i][0][1]**2 + tvecs[i][0][2]**2)
+                   # x, y 오프셋
+                   x_offset = tvecs[i][0][0]
+                   y_offset = tvecs[i][0][1]
+                   
+                   print(f"ID:10 Distance:{distance:.3f} X_offset:{x_offset:.3f} Y_offset:{y_offset:.3f}")
+                   
+                   # 목표 위치 도달 여부
+                   if (abs(distance - TARGET_DISTANCE) < DISTANCE_TOLERANCE and 
+                       abs(x_offset) < DISTANCE_TOLERANCE):
+                       print("Position OK")
+                       cap.release()
+                       finish_event.set()
+                       return  # 프로그램 종료
+                       
+                   # 로봇 제어
+                   if abs(x_offset) > DISTANCE_TOLERANCE:
+                       if x_offset > DISTANCE_TOLERANCE:
+                           # 좌회전
+                           control_queue.put((LINE_SPEED, -ANGULAR_SPEED))
+                           time.sleep(0.025)
+                       else:
+                           # 우회전
+                           control_queue.put((LINE_SPEED, ANGULAR_SPEED))
+                           time.sleep(0.025)
+                   else:
+                       if distance > TARGET_DISTANCE + DISTANCE_TOLERANCE:
+                           # 전진
+                           control_queue.put((LINE_SPEED, 0))
+                   
+   except KeyboardInterrupt:
+       cap.release()
+       print("\nProgram terminated by user")

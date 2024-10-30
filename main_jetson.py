@@ -14,6 +14,7 @@ from transbot.end_line_detect import end_line_detect
 from transbot.obstacle_subscriber import obstacle_subscriber
 from transbot.raspi_command import raspi_command
 from transbot.apple_subscriber import apple_subscriber
+from transbot.aruco_follower import aruco_follower
 
 QUEUE_CHECK_INTERVAL = 0.01
 CAMERA_CHECK_INTERVAL = 1
@@ -36,6 +37,7 @@ def main():
         end_line_show_event = Event()
         obstacle_event = Event()
         apple_counted_event = Event()
+        finish_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, line_tracking_end_event, line_tracking_show_event))
@@ -45,6 +47,7 @@ def main():
         obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_event,))
         raspi_command_process = Process(target=raspi_command, args=(command_queue,))
         apple_subscriber_process = Process(target=apple_subscriber, args=(apple_counted_event,))
+        aruco_follower_process = Process(target=aruco_follower, args=(control_queue, finish_event))
 
         processes = [camera_capture_process, line_tracing_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process]
 
@@ -168,12 +171,16 @@ def main():
         time.sleep(1)
         camera_capture_process.terminate()
         
-        ###  3. ARUCO_MARKER  ###
+        ###  3. ARUCO_FOLLOWER  ###
 
         command_queue.put("screen:z")
+        aruco_follower_process.start()
 
-    except KeyboardInterrupt:
-        print("Program Exiting...")
+        while not finish_event.is_set():
+            if not control_queue.empty():
+                line, angular = control_queue.get()
+                bot_control(line, angular)
+
     finally:
         bot_control(0, 0)
         print("Bot stopped.")
