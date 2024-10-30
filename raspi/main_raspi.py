@@ -19,29 +19,30 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata, msg):
     if msg.payload:
-        message = msg.payload.decode("utf-8")
+        message = msg.payload.decode("utf-8").split(':')
+        cmd, ps  = message.split(':')
 
         ## start: ##
-        if message[:6] == "start:":
-            if message[6:] == "light":
+        if cmd == "start":
+            if ps == "light":
                 userdata.get("light_on", lambda: None)()
-            elif message[6:] == "obstacle_publisher_process":
+            elif ps == "obstacle_publisher_process":
                 obstacle_publisher_process = userdata.get("obstacle_publisher_process")
                 if not obstacle_publisher_process.is_alive():
                     obstacle_publisher_process.start()
-            elif message[6:] == "video_recorder_process":
+            elif ps == "video_recorder_process":
                 video_recorder_process = userdata.get("video_recorder_process")
                 if not video_recorder_process.is_alive():
                     video_recorder_process.start()
         ## restart: ##
-        elif message[:8] == "restart:":
-            if message[8:] == "video_recorder_process":
+        elif cmd == "restart":
+            if ps == "video_recorder_process":
                 userdata.get("video_recorder_event").clear()
         ## end: ##
-        elif message[:4] == "end:":
-            if message[4:] == "light":
+        elif cmd == "end":
+            if ps == "light":
                 userdata.get("light_off", lambda: None)()
-            elif message[4:] == "video_recorder_process":
+            elif ps == "video_recorder_process":
                 print("Area termination signal detected.")
                 video_recorder_event = userdata.get("video_recorder_event")
                 video_recorder_event.set() # Save recorded video file
@@ -51,7 +52,7 @@ def on_message(client, userdata, msg):
                 # Publish end signal to Jetson
                 client.publish("raspi/video_process_status", "video_recorder_process ended")
         ## screen: ##
-        elif message[:7] == "screen:":
+        elif cmd == "screen":
             userdata.get("command_share_queue").put(message)
 
 def main():
@@ -104,4 +105,3 @@ def main():
         for process in always_running_processes:
             if process.is_alive():
                 process.join()
-

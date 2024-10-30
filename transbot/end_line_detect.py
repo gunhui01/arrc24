@@ -25,7 +25,7 @@ import subprocess, sys, cv2
 import numpy as np
 
 
-def end_line_detect(frame_queue, end_line_detect_event):
+def end_line_detect(frame_queue, end_line_detect_event, end_line_show_event):
     try:
         while True:
             if not frame_queue.empty():
@@ -85,7 +85,17 @@ def end_line_detect(frame_queue, end_line_detect_event):
                     large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_contour_area]
                     if large_contours:
                         end_line_detect_event.set()
+                
+                if end_line_show_event.is_set():
+                    # 카메라 화면 표시
+                    cv2.imshow('Line Tracking', frame)
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord('q'):
+                        end_line_detect_event.set()
+                        cv2.destroyAllWindows()
+                        break
 
     except Exception as e: print(e)
     finally:
         end_line_detect_event.set()
+        cv2.destroyAllWindows()

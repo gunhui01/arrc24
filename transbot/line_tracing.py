@@ -30,9 +30,8 @@ def find_line(speed, angle):
         return speed, angle
 
 # 메인 함수
-def line_tracing(frame_queue, control_queue, flag_queue):
+def line_tracing(frame_queue, control_queue, flag_queue, line_tracing_show_event):
     # 초기 변수 설정
-    flag = True # 로봇이 움직이지 않음 = False)
     speed = angle = 0
     find_line_count = 0
 
@@ -131,7 +130,7 @@ def line_tracing(frame_queue, control_queue, flag_queue):
                             find_line_count = 0
                             is_contour_exist = True
 
-                if (is_contour_exist == False) & (flag == True):
+                if is_contour_exist == False:
                     if find_line_count == 0:
                         now = time()
                     speed, angle = find_line(speed, angle)
@@ -141,14 +140,15 @@ def line_tracing(frame_queue, control_queue, flag_queue):
                         control_queue.put((0, -angle))
                         sleep(2.8)
                         break
-
-                # # 카메라 화면 표시
-                # cv2.imshow('Line Tracking', frame)
-                    
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):
-                    control_queue.put((0, 0))
-                    break
+                
+                # 카메라 화면 표시
+                if line_tracing_show_event.is_set():
+                    cv2.imshow('Line Tracking', frame)
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord('q'):
+                        control_queue.put((0, 0))
+                        cv2.destroyAllWindows()
+                        break
 
                 # 최종 모터 제어
                 control_queue.put((speed, angle))

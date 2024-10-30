@@ -30,8 +30,10 @@ def main():
         lidar_array = Array('b', [False, False])
 
         camera_capture_event = Event()
+        line_tracking_show_event = Event()
         lidar_scan_event = Event()
         end_line_detect_event = Event()
+        end_line_show_event = Event()
         obstacle_event = Event()
         video_process_end_event = Event()
 
@@ -46,11 +48,16 @@ def main():
 
         processes = [camera_capture_process, line_tracing_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process, video_subscriber_process]
 
+        ### CLI 환경 사용 시 비활성화 할 것 ###
+        line_tracking_show_event.set()
+        end_line_show_event.set()
+        ### CLI 환경 사용 시 비활성화 할 것 ###
+
         camera_capture_process.start()
         time.sleep(CAMERA_CHECK_INTERVAL)
         print("camera_capture started.")
 
-        ###  LINE_TRACING  ###
+        ###  1. LINE_TRACING  ###
 
         line_tracing_process.start()
         print("line_tracing started.")
@@ -72,23 +79,18 @@ def main():
                     break
             time.sleep(QUEUE_CHECK_INTERVAL)
 
-        ###  AVOID_TREES  ###
+        ###  2. AVOID_TREES  ###
 
         current_area = 0
         end_line_detected = False
-
+        
         lidar_scan_process.start()
-        print("lidar_scan started.")
         avoid_trees_process.start()
-        print("avoid_trees started.")
         end_line_detect_process.start()
-        print("end_line_detect started.")
         raspi_command_process.start()
-        print("raspi_command started.")
         obstacle_subscriber_process.start()
-        print("obstacle_subscriber started.")
         video_subscriber_process.start()
-        print("video_subscriber started.")
+
 
         command_queue.put("start:obstacle_publisher_process")
         command_queue.put("start:video_publisher_process")
@@ -147,7 +149,7 @@ def main():
 
                 command_queue.put("restart:video_publisher_process")
         
-        ###  ARUCO_MARKER  ###
+        ###  3. ARUCO_MARKER  ###
 
         command_queue.put("screen:0,0")
 
