@@ -28,7 +28,7 @@ class ScreenDisplay:
             if self.command[:7] == "screen:":
                 self.update_image(self.command[7], self.command[9])
 
-        if not self.image_change_queue.empty():
+        if not self.queue.empty():
             area, result = self.queue.get()
             self.update_image(area, result)
         
@@ -43,6 +43,6 @@ class ScreenDisplay:
     def run(self):
         self.root.mainloop()
 
-def screen_display(command_share_queue, image_change_queue):
-    display = ScreenDisplay(command_share_queue, image_change_queue)
+def screen_display(image_change_queue):
+    display = ScreenDisplay(image_change_queue)
     display.run()

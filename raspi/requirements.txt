@@ -1,3 +1,0 @@
-paho-mqtt==2.1.0
-rpi-lgpio==0.6
-pillow==11.0.0

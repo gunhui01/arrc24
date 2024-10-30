@@ -1,6 +1,7 @@
+
+__author__ = ["Hwang Hyeonjun"]
+
 import subprocess, sys, cv2
-from time import sleep
-import threading
 
 FOCUS_VALUE = 400  # Set focus value here
 RESOLUTION_WIDTH = 1280  # Set resolution width here

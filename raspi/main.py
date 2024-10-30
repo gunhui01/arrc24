@@ -1,24 +1,108 @@
 #!/usr/bin/env python3
 
-__author__ = "Park Gunhui"
+__author__ = ["Park Gunhui", "Hwang Hyeonjun"]
 
+import paho.mqtt.client as mqtt
+from multiprocessing import Process, Queue, Event
 import time
-from multiprocessing import Process, Queue
 
 from screen_display import screen_display
-from command_receiver import command_receiver
+from camera_capture import camera_capture
+from video_recorder import video_recorder
+from obstacle_publisher import obstacle_publisher
+import light_control
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    client.subscribe("jetson/command")
+    print("Userdata on connect:", userdata)
+
+def on_message(client, userdata, msg):
+    if msg.payload:
+        message = msg.payload.decode("utf-8")
+
+        ## stacle_publisher_process (start) ##
+        if message == "start:obstacle_publisher_process":
+            obstacle_publisher_process = userdata.get("obstacle_publisher_process")
+            if not obstacle_publisher_process.is_alive():
+                obstacle_publisher_process.start()
+        elif message == "light_on":
+            userdata.get("light_on", lambda: None)()
+        elif message == "light_off":
+            userdata.get("light_off", lambda: None)()
+        elif message[:7] == "screen:":
+            userdata.get("command_share_queue").put(message)
+
+        ## video_recorder_process (start) ##
+        elif msg.payload.decode("utf-8") == "start:video_recorder_process":
+            video_recorder_process = userdata.get("video_recorder_process")
+            if not video_recorder_process.is_alive():
+                video_recorder_process.start()
+
+        ## video_recorder_process (restart)
+        elif msg.payload.decode("utf-8") == "restart:video_recorder_process":
+            userdata.get("video_recorder_event").clear()
+
+        ## video_recorder_process (area finished)
+        elif msg.payload.decode("utf-8") == "end:video_recorder_process":
+            print("Area termination signal detected.")
+            video_recorder_event = userdata.get("video_recorder_event")
+            video_recorder_event.set() # Save recorded video file
+            time.sleep(1)
+            while not video_recorder_event.is_set(): # Wait for the event to clear
+                time.sleep(1)
+            # Publish end signal to Jetson
+            client.publish("raspi/video_process_status", "video_recorder_process ended")
 
 def main():
-    display_info_queue = Queue()
-    command_share_queue = Queue()
+    try:
+        ## Define Queue, Event, Process ##
+        display_info_queue = Queue()
+        command_share_queue = Queue()
+        frame_queue = Queue()
 
-    screen_display_process = Process(target=screen_display, args=(command_share_queue, command_share_queue))
-    command_receiver_process = Process(target=command_receiver, args=(command_share_queue,))
+        camera_capture_event = Event()
+        video_recorder_event = Event()
 
-    screen_display_process.start()
-    command_receiver_process.start()
+        screen_display_process = Process(target=screen_display, args=(command_share_queue, display_info_queue))
+        camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
+        obstacle_publisher_process = Process(target=obstacle_publisher)
+        video_recorder_process = Process(target=video_recorder, args=(frame_queue, video_recorder_event))
 
-    # display_info_queue.put(("1", "1"))
+        always_running_processes = [screen_display_process, camera_capture_process]
+        events = [camera_capture_event, video_recorder_event]
 
-if __name__ == "__main__":
-    main()
+
+        ## MQTT Client Settings ##
+        client = mqtt.Client()
+        client.on_connect = on_connect
+        client.on_message = on_message
+        userdata = {
+            "obstacle_publisher_process": obstacle_publisher_process,
+            "light_on": light_control.on,
+            "light_off": light_control.off,
+            "video_recorder_process": video_recorder_process,
+            "video_recorder_event": video_recorder_event
+        }
+        client.user_data_set(userdata)
+        client.connect("192.168.0.2", 1883, 60)
+        client.loop_start()
+
+        for process in always_running_processes:
+            process.start()
+
+        # display_info_queue.put(("1", "1"))
+
+        ## Loop ##
+        while True:
+            time.sleep(1)
+
+
+    finally:
+        client.loop_stop()
+        for event in events:
+            event.set()
+        for process in always_running_processes:
+            if process.is_alive():
+                process.join()
+
