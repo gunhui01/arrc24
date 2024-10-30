@@ -37,6 +37,9 @@ def line_tracing(frame_queue, control_queue, line_tracking_end_event, line_traci
     try:
         while True:
             if not frame_queue.empty():
+                # 최신 프레임을 유지하기 위해 큐를 계속 비움
+                while frame_queue.qsize() > 1:
+                    frame_queue.get()  # 오래된 프레임 버리기
                 # 큐에서 프레임 가져오기
                 frame = frame_queue.get()
                 frame = cv2.resize(frame, dsize=(320,240), interpolation=cv2.INTER_LINEAR)

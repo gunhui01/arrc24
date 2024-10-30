@@ -29,6 +29,9 @@ def end_line_detect(frame_queue, end_line_detect_event, end_line_show_event):
     try:
         while True:
             if not frame_queue.empty():
+                # 최신 프레임을 유지하기 위해 큐를 계속 비움
+                while frame_queue.qsize() > 1:
+                    frame_queue.get()  # 오래된 프레임 버리기
                 # 큐에서 프레임 가져오기
                 frame = frame_queue.get()
                 frame = cv2.resize(frame, dsize=(320,240), interpolation=cv2.INTER_LINEAR)
@@ -85,7 +88,8 @@ def end_line_detect(frame_queue, end_line_detect_event, end_line_show_event):
                     large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) >= min_contour_area]
                     if large_contours:
                         end_line_detect_event.set()
-                        
+                        break
+                
                 if end_line_show_event.is_set():
                     # 카메라 화면 표시
                     cv2.imshow('Line Tracking', frame)

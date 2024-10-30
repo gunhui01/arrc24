@@ -16,7 +16,7 @@ from transbot.video_subscriber import video_subscriber
 from transbot.raspi_command import raspi_command
 
 QUEUE_CHECK_INTERVAL = 0.01
-CAMERA_CHECK_INTERVAL = 2
+CAMERA_CHECK_INTERVAL = 1
 STOP_INTERVAL = 0
 TOTAL_AREAS = 3
 
@@ -53,14 +53,13 @@ def main():
         end_line_show_event.set()
         ### CLI 환경 사용 시 비활성화 할 것 ###
 
-        camera_capture_process.start()
-        time.sleep(CAMERA_CHECK_INTERVAL)
-        print("camera_capture started.")
 
         ###  1. LINE_TRACING  ###
 
+        print("Line tracking started.")
+        camera_capture_process.start()
         line_tracing_process.start()
-        print("line_tracing started.")
+
         # line_tracing_start_time = time.time()
         # while (time.time() - line_tracing_start_time) < CAMERA_CHECK_INTERVAL:
         #     if not control_queue.empty():
@@ -68,6 +67,9 @@ def main():
 
         while True:
             if not control_queue.empty():
+                # 최신 프레임을 유지하기 위해 큐를 계속 비움
+                while control_queue.qsize() > 1:
+                    control_queue.get()  # 오래된 프레임 버리기
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
@@ -80,7 +82,7 @@ def main():
 
         ###  2. AVOID_TREES  ###
 
-        current_area = 0
+        current_area = 1
         end_line_detected = False
         
         lidar_scan_process.start()
@@ -90,15 +92,15 @@ def main():
         obstacle_subscriber_process.start()
         video_subscriber_process.start()
 
-
         command_queue.put("start:obstacle_publisher_process")
         command_queue.put("start:video_publisher_process")
-        command_queue.put(f"screen:{current_area + 1},z") # 1구간 분석 중 화면 표시
+        command_queue.put(f"screen:{current_area},z") # 1구간 분석 중 화면 표시
         area_start_time = time.time()
 
-        while current_area < TOTAL_AREAS:
-            command_queue.put("start:light")
+        while True:
+            command_queue.put("start:light") # 라이트 켜기
 
+            # 장애물이 감지될 경우
             if obstacle_event.is_set():
                 bot_control(0, 0)
                 print("Obstacle detected.")
@@ -107,46 +109,56 @@ def main():
                     time.sleep(0.1)
                     command_queue.put("start:light")
                     time.sleep(0.1)
-                area_start_time = time.time() - 1.5
+                time.sleep(1) # 장애물이 치워진 후 1초 대기
+                current_area += 1
+                if current_area > TOTAL_AREAS:
+                    break
+                if not control_queue.empty():
+                    # 최신 프레임을 유지하기 위해 큐를 계속 비움
+                    while control_queue.qsize() > 1:
+                        control_queue.get()  # 오래된 프레임 버리기
                 end_line_detect_event.clear()
 
             if not control_queue.empty():
+                # 최신 프레임을 유지하기 위해 큐를 계속 비움
+                while control_queue.qsize() > 1:
+                    control_queue.get()  # 오래된 프레임 버리기
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
-            if (not end_line_detected) and (end_line_detect_event.is_set()) and ((time.time() - area_start_time) > 2):
-                current_area += 1
+            # area 출발한 지 1초 전까지는 end_line을 detect하지 못하도록 함
+            if (time.time() - area_start_time) < 1:
+                end_line_detect_event.clear()
 
-                end_line_detected = True
-                end_line_detect_time = time.time()
-
-            # 정지선 탐지 후 몇초간 전진 후 정지
-            if end_line_detected and ((time.time() - end_line_detect_time) > STOP_INTERVAL):
-                bot_control(0,0)
+            if end_line_detect_event.is_set():
+                bot_control(0,0) # 정지
                 print(f"Area {current_area} finished.")
-                end_line_detected = False
-                command_queue.put("end:video_publisher_process") # 동영상 촬영 프로세스 종료
+                current_area += 1
+                command_queue.put("end:video_recorder_process") # 동영상 녹화 정지
                 while not video_process_end_event.is_set():
                     time.sleep(0.1)
                 video_process_end_event.clear()
-                if current_area < TOTAL_AREAS + 1: command_queue.put(f"screen:{current_area + 1},z") # 2~3구간 분석 중 화면 표시
-                area_start_time = time.time()
 
-                if current_area >= TOTAL_AREAS:
-                    end_line_detect_process.terminate()
-                    print("end_line_detect finished.")
-                    avoid_trees_process.terminate()
-                    print("avoid_trees finished.")
-                    lidar_scan_event.set()
-                    lidar_scan_process.join()
-                    print("lidar_scan finished.")
-                    camera_capture_event.set()
-                    time.sleep(1)
-                    camera_capture_process.terminate()
-                    print("camera_capture finished.")
+                if current_area <= TOTAL_AREAS:
+                    command_queue.put(f"screen:{current_area + 1},z") # 2~3구간 분석 중 화면 표시
+                    area_start_time = time.time()
+                else: # 모든 구간이 끝난 경우
                     break
+            # 구역별 녹화 재시작
+            command_queue.put("restart:video_publisher_process")
 
-                command_queue.put("restart:video_publisher_process")
+        # 구간 종료 코드
+        end_line_detect_process.terminate()
+        print("end_line_detect finished.")
+        avoid_trees_process.terminate()
+        print("avoid_trees finished.")
+        lidar_scan_event.set()
+        lidar_scan_process.join()
+        print("lidar_scan finished.")
+        camera_capture_event.set()
+        time.sleep(1)
+        camera_capture_process.terminate()
+        print("camera_capture finished.")
         
         ###  3. ARUCO_MARKER  ###
 
