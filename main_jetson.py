@@ -46,7 +46,7 @@ def main():
         video_subscriber_process = Process(target=video_subscriber, args=(video_process_end_event,))
         raspi_command_process = Process(target=raspi_command, args=(command_queue,))
 
-        processes = [camera_capture_process, line_tracing_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process, video_subscriber_process]
+        processes = [camera_capture_process, line_tracing_process, lidar_scan_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process, video_subscriber_process, raspi_command_process]
 
         ### CLI 환경 사용 시 비활성화 할 것 ###
         line_tracking_show_event.set()
