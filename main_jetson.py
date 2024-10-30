@@ -12,8 +12,8 @@ from transbot.avoid_trees import lidar_scan
 from transbot.avoid_trees import avoid_trees
 from transbot.end_line_detect import end_line_detect
 from transbot.obstacle_subscriber import obstacle_subscriber
-from transbot.video_subscriber import video_subscriber
 from transbot.raspi_command import raspi_command
+from transbot.apple_subscriber import apple_subscriber
 
 QUEUE_CHECK_INTERVAL = 0.01
 CAMERA_CHECK_INTERVAL = 1
@@ -35,7 +35,7 @@ def main():
         end_line_detect_event = Event()
         end_line_show_event = Event()
         obstacle_event = Event()
-        video_process_end_event = Event()
+        apple_counted_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
         line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, line_tracking_end_event, line_tracking_show_event))
@@ -43,10 +43,10 @@ def main():
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event, end_line_show_event))
         obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_event,))
-        video_subscriber_process = Process(target=video_subscriber, args=(video_process_end_event,))
         raspi_command_process = Process(target=raspi_command, args=(command_queue,))
+        apple_subscriber_process = Process(target=apple_subscriber, args=(apple_counted_event,))
 
-        processes = [camera_capture_process, line_tracing_process, lidar_scan_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process, video_subscriber_process, raspi_command_process]
+        processes = [camera_capture_process, line_tracing_process, avoid_trees_process, end_line_detect_process, obstacle_subscriber_process]
 
         ### CLI 환경 사용 시 비활성화 할 것 ###
         line_tracking_show_event.set()
@@ -90,23 +90,28 @@ def main():
         end_line_detect_process.start()
         raspi_command_process.start()
         obstacle_subscriber_process.start()
-        video_subscriber_process.start()
+        apple_subscriber_process.start()
 
         command_queue.put("start:obstacle_publisher_process")
-        command_queue.put("start:video_publisher_process")
-        command_queue.put("screen:x")
+        command_queue.put("start:video_recorder_process")
         command_queue.put("start:apple_count_subscriber_process")
+        command_queue.put("screen:x")
         area_start_time = time.time()
+        obstacle = False
 
+        command_queue.put("start:light") # 라이트 켜기
+        command_queue.put("event_set:video_record_event") # 녹화 시작
+        
+        # 구역별 반복문
         while True:
-            command_queue.put("start:light") # 라이트 켜기
-
             # 장애물이 감지될 경우
             if obstacle_event.is_set():
-                bot_control(0, 0)
+                bot_control(0, 0) # 봇 정지
                 print("Obstacle detected.")
+                obstacle = True # 장애물 구간 플래그 활성화
                 command_queue.put("screen:y")
-                while obstacle_event.is_set():
+                command_queue.put("event_clear:video_record_event") # 녹화 중지
+                while obstacle_event.is_set(): # 장애물이 제거될 때 까지 대기
                     command_queue.put("end:light")
                     time.sleep(0.1)
                     command_queue.put("start:light")
@@ -136,45 +141,51 @@ def main():
                 bot_control(0,0) # 정지
                 print(f"Area {current_area} finished.")
                 current_area += 1
-                command_queue.put("end:video_recorder_process") # 동영상 녹화 정지
-                while not video_process_end_event.is_set():
+                if not obstacle: # 장애물 구간이 아닌 경우
+                    command_queue.put("event_set:video_save_event") # 동영상 녹화 정지
+                
+                # 결과가 표시될 때 까지 대기
+                while not apple_counted_event.is_set():
                     time.sleep(0.1)
-                video_process_end_event.clear()
-
-                if current_area <= TOTAL_AREAS:
+                apple_counted_event.clear()
+                time.sleep(2)
+                
+                if current_area <= TOTAL_AREAS: # 전구간이 아직 끝나지 않은 경우
                     command_queue.put(f"screen:{current_area + 1},z") # 2~3구간 분석 중 화면 표시
                     area_start_time = time.time()
+                    command_queue.put("event_set:video_record_event") # 구역별 녹화 재시작
                 else: # 모든 구간이 끝난 경우
                     break
-            # 구역별 녹화 재시작
-            command_queue.put("restart:video_publisher_process")
+        
+        obstacle = False
 
         # 구간 종료 코드
         end_line_detect_process.terminate()
-        print("end_line_detect finished.")
         avoid_trees_process.terminate()
-        print("avoid_trees finished.")
         lidar_scan_event.set()
-        lidar_scan_process.join()
-        print("lidar_scan finished.")
+        lidar_scan_process.join(timeout=5)
         camera_capture_event.set()
         time.sleep(1)
         camera_capture_process.terminate()
-        print("camera_capture finished.")
         
         ###  3. ARUCO_MARKER  ###
 
         command_queue.put("screen:z")
 
+    except KeyboardInterrupt:
+        print("Program Exiting...")
     finally:
+        bot_control(0, 0)
+        print("Bot stopped.")
         for process in processes:
             process.terminate()
+            print(f"{process} terminated.")
         lidar_scan_event.set()
         lidar_scan_process.join(timeout=5)
+        print("lidar_scan_process terminated.")
         camera_capture_event.set()
+        print("camera_capture_event terminated.")
         command_queue.put("end:light")
-        time.sleep(1)
-        bot_control(0, 0)
 
 if __name__ == "__main__":
     main()

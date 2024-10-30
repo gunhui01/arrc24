@@ -7,7 +7,7 @@ import cv2
 import time
 import queue
 
-def video_recorder(frame_queue, video_record_event, video_saving_event):
+def video_recorder(frame_queue, video_record_event, video_save_event):
     
     # Set File Codec
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -18,7 +18,7 @@ def video_recorder(frame_queue, video_record_event, video_saving_event):
             print("Side Camera Recording Started.")
             idx_temp = None
             try:
-                while not video_saving_event.is_set():
+                while not video_save_event.is_set():
                     try:
                         idx, frame = frame_queue.get(timeout=1)
                         if not idx_temp:
@@ -40,6 +40,8 @@ def video_recorder(frame_queue, video_record_event, video_saving_event):
                     out.release()
                 print("Saving complete.")
                 video_record_event.clear()
+                video_save_event.clear()
 
+        outs = None
         # video_record_event를 확인하는 간격 설정
         time.sleep(0.1)
