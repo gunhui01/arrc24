@@ -11,6 +11,7 @@ from camera_capture import camera_capture
 from video_recorder import video_recorder
 from obstacle_publisher import obstacle_publisher
 from apple_count_subscriber import apple_count_subscriber
+from record_publisher import record_publisher
 import light_control
 
 def on_connect(client, userdata, flags, rc):
@@ -65,6 +66,7 @@ def main():
         command_share_queue = Queue()
         frame_queue = Queue()
         apple_count_queue = Queue()
+        record_command_queue = Queue()
 
         camera_capture_event = Event()
         video_recorder_event = Event()
@@ -74,6 +76,7 @@ def main():
         obstacle_publisher_process = Process(target=obstacle_publisher)
         video_recorder_process = Process(target=video_recorder, args=(frame_queue, video_recorder_event))
         apple_count_subscriber_process = Process(target=apple_count_subscriber, args=(apple_count_queue,))
+        record_publisher_process = Process(target=record_publisher, args=(record_command_queue,))
 
         always_running_processes = [screen_display_process, camera_capture_process]
         events = [camera_capture_event, video_recorder_event]
