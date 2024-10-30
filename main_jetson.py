@@ -7,7 +7,7 @@ from multiprocessing import Process, Queue, Array, Event
 
 from transbot.bot_control import bot_control
 from transbot.camera_capture import camera_capture
-from transbot.line_tracing import line_tracing
+from transbot.line_tracing2 import line_tracing
 from transbot.avoid_trees import lidar_scan
 from transbot.avoid_trees import avoid_trees
 from transbot.end_line_detect import end_line_detect
@@ -38,10 +38,10 @@ def main():
         video_process_end_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
-        line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue))
+        line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue, line_tracking_show_event))
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
-        end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event))
+        end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event, end_line_show_event))
         obstacle_subscriber_process = Process(target=obstacle_subscriber, args=(obstacle_event,))
         video_subscriber_process = Process(target=video_subscriber, args=(video_process_end_event,))
         raspi_command_process = Process(target=raspi_command, args=(command_queue,))
@@ -77,7 +77,7 @@ def main():
                     line_tracing_process.terminate()
                     print("line_tracing finished.")
                     break
-            time.sleep(QUEUE_CHECK_INTERVAL)
+            time.sleep(1) # 정지선 인식 대기
 
         ###  2. AVOID_TREES  ###
 

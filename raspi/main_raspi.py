@@ -20,7 +20,7 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     if msg.payload:
         message = msg.payload.decode("utf-8")
-        cmd, ps  = message.split(':')
+        cmd, ps = message.split(':')
 
         ## start: ##
         if cmd == "start":
@@ -105,3 +105,6 @@ def main():
         for process in always_running_processes:
             if process.is_alive():
                 process.join()
+
+if __name__ == "__main__":
+    main()
