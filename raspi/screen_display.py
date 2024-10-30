@@ -29,8 +29,8 @@ class ScreenDisplay:
                 self.update_image(self.command[7])
 
         if not self.apple_count_queue.empty():
-            area, result = self.queue.get()
-            self.update_image(area, result)
+            filename = self.apple_count_queue.get()
+            self.update_image(filename)
 
         self.root.after(CHECK_INTERVAL, self.check_queue)
 

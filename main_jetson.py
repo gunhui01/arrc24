@@ -94,8 +94,8 @@ def main():
 
         command_queue.put("start:obstacle_publisher_process")
         command_queue.put("start:video_publisher_process")
-        command_queue.put("start:apple_count_subscriber_process")
         command_queue.put("screen:x")
+        command_queue.put("start:apple_count_subscriber_process")
         area_start_time = time.time()
 
         while True:
