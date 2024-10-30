@@ -16,13 +16,12 @@ from transbot.video_subscriber import video_subscriber
 from transbot.raspi_command import raspi_command
 
 QUEUE_CHECK_INTERVAL = 0.01
-CAMERA_CHECK_INTERVAL = 1
+CAMERA_CHECK_INTERVAL = 2
 STOP_INTERVAL = 0
 TOTAL_AREAS = 3
 
 def main():
     try:
-        flag_queue = Queue()       # 다음 프로그램 진행 유무(Bool)
         control_queue = Queue()    # 모터의 속도, 각속도(Tuple)
         pause_queue = Queue()      # 모터 정지 유무(Bool)
         frame_queue = Queue()      # 카메라가 받은 이미지
@@ -30,6 +29,7 @@ def main():
         lidar_array = Array('b', [False, False])
 
         camera_capture_event = Event()
+        line_tracking_end_event = Event()
         line_tracking_show_event = Event()
         lidar_scan_event = Event()
         end_line_detect_event = Event()
@@ -38,7 +38,7 @@ def main():
         video_process_end_event = Event()
 
         camera_capture_process = Process(target=camera_capture, args=(frame_queue, camera_capture_event))
-        line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, flag_queue, line_tracking_show_event))
+        line_tracing_process = Process(target=line_tracing, args=(frame_queue, control_queue, line_tracking_end_event, line_tracking_show_event))
         lidar_scan_process = Process(target=lidar_scan, args=(lidar_array, lidar_scan_event))
         avoid_trees_process = Process(target=avoid_trees, args=(lidar_array, control_queue))
         end_line_detect_process = Process(target=end_line_detect, args=(frame_queue, end_line_detect_event, end_line_show_event))
@@ -61,23 +61,22 @@ def main():
 
         line_tracing_process.start()
         print("line_tracing started.")
-        line_tracing_start_time = time.time()
-        while (time.time() - line_tracing_start_time) < CAMERA_CHECK_INTERVAL:
-            if not control_queue.empty():
-                line, angular = control_queue.get()
+        # line_tracing_start_time = time.time()
+        # while (time.time() - line_tracing_start_time) < CAMERA_CHECK_INTERVAL:
+        #     if not control_queue.empty():
+        #         line, angular = control_queue.get()
 
         while True:
             if not control_queue.empty():
                 line, angular = control_queue.get()
                 bot_control(line, angular)
 
-            if not flag_queue.empty():
-                finish = flag_queue.get()
-                if finish:
-                    line_tracing_process.terminate()
-                    print("line_tracing finished.")
-                    break
-            time.sleep(1) # 정지선 인식 대기
+            if line_tracking_end_event.is_set():
+                time.sleep(1) # 정지선 검출 1초 후 정지
+                bot_control(0,0)
+                line_tracing_process.terminate()
+                print("line_tracing finished.")
+                break
 
         ###  2. AVOID_TREES  ###
 

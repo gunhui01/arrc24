@@ -29,7 +29,7 @@ def find_line(speed, angle):
         return speed, angle
 
 # 메인 함수
-def line_tracing(frame_queue, control_queue, flag_queue, line_tracing_show_event):
+def line_tracing(frame_queue, control_queue, line_tracking_end_event, line_tracing_show_event):
     # 초기 변수 설정
     speed = angle = 0
     find_line_count = 0
@@ -107,12 +107,10 @@ def line_tracing(frame_queue, control_queue, flag_queue, line_tracing_show_event
                         left_vertices = [v for v in approx if v[0][0] < width * 0.1]  # 좌측 10% 영역 내 꼭짓점
                         right_vertices = [v for v in approx if v[0][0] > width * 0.9]  # 우측 10% 영역 내 꼭짓점
 
+                        # 정지 조건
                         if len(left_vertices) >= 2 and len(right_vertices) >= 2:
-                            # 정지 조건 만족 시 동작
-                            print("Stop line detected based on vertex positions.")
-                            time.sleep(1)
-                            control_queue.put((0, 0))  # 정지 명령 전달
-                            sleep(2.8)
+                            print("End line detected.")
+                            line_tracking_end_event.set()
                             break
 
                         # 컨투어의 무게중심 계산
@@ -168,6 +166,5 @@ def line_tracing(frame_queue, control_queue, flag_queue, line_tracing_show_event
 
     except Exception as e: print(e)
     finally:
-        control_queue.put((0, 0))
-        flag_queue.put(True)
+        line_tracking_end_event.set()
         cv2.destroyAllWindows()
