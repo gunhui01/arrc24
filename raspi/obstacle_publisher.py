@@ -9,7 +9,7 @@ import time
 DETECT_RANGE = 10 #cm
 
 def on_connect(client, userdata, flags, rc):
-	if rc == 0: print("Connected success")
+	if rc == 0: print("obstacle_publisher connected success")
 	else: print("Bad connection returned code: ", rc)
 
 def measure_distance(trig_pin, echo_pin):

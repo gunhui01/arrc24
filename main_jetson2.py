@@ -95,7 +95,6 @@ def main():
 
         command_queue.put("start:light") # 라이트 켜기
 
-        # 구역별 반복문
         while True:
             # 장애물이 감지될 경우
             if obstacle_event.is_set():
@@ -135,7 +134,7 @@ def main():
                 current_area += 1
                 if not obstacle: # 장애물 구간이 아닌 경우
                     command_queue.put("screen:7")
-                
+
                 if current_area <= TOTAL_AREAS: # 전구간이 아직 끝나지 않은 경우
                     command_queue.put(f"screen:x")
                     area_start_time = time.time()
