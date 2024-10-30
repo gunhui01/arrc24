@@ -92,18 +92,19 @@ def main():
 
         command_queue.put("start:obstacle_publisher_process")
         command_queue.put("start:video_publisher_process")
+        command_queue.put(f"screen:{current_area + 1},z") # 1구간 분석 중 화면 표시
         area_start_time = time.time()
 
         while current_area < TOTAL_AREAS:
-            command_queue.put("light_on")
+            command_queue.put("start:light")
 
             if obstacle_event.is_set():
                 bot_control(0, 0)
                 print("Obstacle detected.")
                 while obstacle_event.is_set():
-                    command_queue.put("light_off")
+                    command_queue.put("end:light")
                     time.sleep(0.1)
-                    command_queue.put("light_on")
+                    command_queue.put("start:light")
                     time.sleep(0.1)
                 area_start_time = time.time() - 1.5
                 end_line_detect_event.clear()
@@ -127,6 +128,7 @@ def main():
                 while not video_process_end_event.is_set():
                     time.sleep(0.1)
                 video_process_end_event.clear()
+                if current_area < TOTAL_AREAS + 1: command_queue.put(f"screen:{current_area + 1},z") # 2~3구간 분석 중 화면 표시
                 area_start_time = time.time()
 
                 if current_area >= TOTAL_AREAS:
@@ -144,7 +146,10 @@ def main():
                     break
 
                 command_queue.put("restart:video_publisher_process")
+        
+        ###  ARUCO_MARKER  ###
 
+        command_queue.put("screen:0,0")
 
     finally:
         for process in processes:
@@ -152,7 +157,7 @@ def main():
         lidar_scan_event.set()
         lidar_scan_process.join(timeout=5)
         camera_capture_event.set()
-        command_queue.put("light_off")
+        command_queue.put("end:light")
         time.sleep(1)
         bot_control(0, 0)
 
