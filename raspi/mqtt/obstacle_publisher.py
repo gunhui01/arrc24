@@ -6,7 +6,7 @@ import RPi.GPIO as GPIO
 import paho.mqtt.client as mqtt
 import time
 
-DETECT_RANGE = 10 #cm
+DETECT_RANGE = 13 #cm
 
 def on_connect(client, userdata, flags, rc):
 	if rc == 0: print("obstacle_publisher connected success")
